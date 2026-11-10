@@ -1,0 +1,110 @@
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    color: rgb(17, 126, 2);
+    background-color: #f4f6f8;
+}
+
+
+p{
+    font-size: 20px;
+    color: blue;
+}
+
+h1{
+    font-size: 30px;
+    /* font-size: 30px; */
+}
+
+h3{
+    font-size: 15px;
+}
+
+/* #form-button{
+    background-color: aqua;
+} */
+
+.navbar ul li a{
+    text-decoration: none;
+    padding: 20px;
+    
+}
+
+.navbar a:visited{
+    color: white;
+}
+
+.navbar a:hover{
+    background-color: black;
+}
+
+.navbar{
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    background-color: rgb(56, 55, 55);
+    padding: 20px;
+}
+.navbar{
+    list-style-type: none;
+    
+}
+
+.navbar ul li{
+    display: inline-block;
+    
+}
+
+.navbar ul{
+    list-style-type: none;
+    margin: 0;
+    
+}
+
+.demotable, td, th {
+    border: 1px solid black;
+    padding: 5px;
+}
+
+.demotable{
+    border-collapse: collapse;
+}
+
+.tdCenter{
+    text-align: center;
+    background-color: white;
+}
+
+
+.btnLink{
+    background-color: #107e02;
+    color:black;
+}
+
+.rowflex{
+    display: flex;
+}
+.leftflex{
+    flex: 50%;
+    padding: 20px;
+}
+.middleflex{
+    flex:50%;
+    padding: 20px;
+}
+.rightflex{
+    flex: 50%;
+    padding: 20px;
+}
+
+#dataGoesBrr {
+    background-color: #f4f6f8;
+
+}
+
+#dataGoesBrr p {
+    color:black;
+    padding-left: 20px;
+}
+
+#dataGoesBrr button {
+    background-color: aliceblue;
+}
