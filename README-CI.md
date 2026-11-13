@@ -96,9 +96,51 @@ The automated CI pipeline is hosted at the [hayden445/ceg3120-project6 Docker Hu
 
 
 
+## Part 3 - Semantic Versioning
+
+### Managing Git Tags
+Semantic versioning (`vMAJOR.MINOR.PATCH`) is used to track container releases and prevent new builds from overwriting older working versions.
+* **List existing tags:** `git tag -l` displays all tags currently stored in the local repository.
+* **Create an annotated tag:** `git tag -a v1.0.0 -m "Release v1.0.0"` attaches a version tag with metadata to the most recent commit.
+* **Push a tag to GitHub:** `git push origin v1.0.0` explicitly pushes the tag to the remote repository (standard `git push` commands only push branch commits).
+
+### Semantic Versioning Workflow Configuration
+The updated [GitHub Actions Workflow File](.github/workflows/docker-build.yml) automates multi-tag image publishing:
+* **Workflow Trigger:** Configured with `on: push: tags: ['v*.*.*']`, removing the previous branch trigger so builds execute strictly when a semantic version tag is pushed.
+* **Workflow Steps:**
+  1. **Checkout Repository (`actions/checkout@v4`):** Checks out the tagged commit's source files onto the runner.
+  2. **Log in to Docker Hub (`docker/login-action@v3`):** Authenticates with Docker Hub using `${{ secrets.DOCKER_USERNAME }}` and `${{ secrets.DOCKER_TOKEN }}`.
+  3. **Extract Metadata (`docker/metadata-action@v5`):** Parses the pushed Git tag (e.g., `v1.1.0`) to automatically generate `latest`, `major` (`1`), and `major.minor` (`1.1`) Docker image tags.
+  4. **Build and Push (`docker/build-push-action@v6`):** Builds the container image and pushes all three generated tags to `hayden445/ceg3120-project6`.
+* **Reusing This Workflow in Another Repository:**
+  * **Changes in the Workflow File:** Update the `images:` field inside `docker/metadata-action@v5` from `hayden445/ceg3120-project6` to the target `<dockerhub-username>/<repository-name>`.
+  * **Changes in the GitHub Repository:** Add `DOCKER_USERNAME` and `DOCKER_TOKEN` under **Settings** > **Secrets and variables** > **Actions** in the destination repository.
+
+### Testing and Validating Semantic Releases
+Published tags and digests are available in the [hayden445/ceg3120-project6 Docker Hub Tags Page](https://hub.docker.com/r/hayden445/ceg3120-project6/tags).
+
+![Tag Workflow Trigger](images/tag-trigger.png)
+*Figure 6: Terminal output from `git tag -l` alongside the GitHub Actions run triggered by pushing the `v1.0.0` tag.*
+
+![Untagged Commit Negative Test](images/tag-negative-test.png)
+*Figure 7: A commit pushed to `main` without a tag alongside the Actions tab confirming no workflow was triggered.*
+
+![Docker Hub Semantic Tag Set](images/tag-set.png)
+*Figure 8: Docker Hub repository showing `latest`, `1`, `1.1`, and `1.0` tags generated automatically.*
+
+![Two Releases Digest Comparison](Images/two_releases.png)
+*Figure 9: Docker Hub image digests showing `latest` and `1` updated to the new `1.1` digest while `1.0` remained pinned to the original image.*
+
+![Version Rollback Verification](images/rollback-proof.png)
+*Figure 10: Side-by-side browser windows running `:1.0` on port 8081 and `:1.1` on port 8082, verifying rollback capability between releases.*
+
+
+
 ### Resources
 * [Docker Hub httpd Official Image](https://hub.docker.com/_/httpd): Consulted to identify the official Apache 2.4 base image tag and locate the default document root directory (`/usr/local/apache2/htdocs/`).
 * [Docker Build CLI Reference](https://docs.docker.com/reference/cli/docker/buildx/build/): Referenced for `docker build` syntax, context targeting, and `-t` tagging conventions for Docker Hub repositories.
 * [Docker Hub Personal Access Token](https://docs.docker.com/security/for-developers/access-tokens/): Used to review requirements for generating scoped Personal Access Tokens for CLI authentication.
 * [Docker Docs: CI/CD with GitHub Actions](https://docs.docker.com/build/ci/github-actions/): Referenced to structure the automated Docker build and push pipeline using official Docker GitHub Actions.
 * [GitHub Docs: Publishing Docker Images](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images): Consulted for configuring repository secrets (`DOCKER_USERNAME` and `DOCKER_TOKEN`) and restricting workflow triggers to the `main` branch.
+* [Semantic Versioning 2.0.0](https://semver.org/): Referenced for `vMAJOR.MINOR.PATCH` version numbering conventions.
+* [GitHub - docker/metadata-action](https://github.com/docker/metadata-action?tab=readme-ov-file): Used to configure `semver` tag extraction patterns (`{{major}}` and `{{major}}.{{minor}}`) and `latest` tagging.
