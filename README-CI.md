@@ -84,9 +84,9 @@ The screenshot below demonstrates the container running locally via `docker ps` 
 
 
 
-![Terminal Output of docker ps](<Images/Screenshot 2026-11-09 183129.png>)
-![Browser view of index.html](<Images/Screenshot 2026-11-09 183954.png>)
-![Browser view of about.html](<Images/Screenshot 2026-11-09 184043.png>)
+![Terminal Output of docker ps](<images/Screenshot 2026-11-09 183129.png>)
+![Browser view of index.html](<images/Screenshot 2026-11-09 183954.png>)
+![Browser view of about.html](<images/Screenshot 2026-11-09 184043.png>)
 
 Figure 1,2,and 3: Terminal output of docker ps showing the active container mapped to port 8080, and browser windows rendering both styled HTML pages.
 
@@ -173,7 +173,7 @@ Published tags and digests are available in the [hayden445/ceg3120-project6 Dock
 ![Docker Hub Semantic Tag Set](images/tag-set.png)
 *Figure 10: Docker Hub repository showing `latest`, `1`, `1.1`, and `1.0` tags generated automatically.*
 
-![Two Releases Digest Comparison](Images/two_releases.png)
+![Two Releases Digest Comparison](images/two_releases.png)
 *Figure 11: Docker Hub image digests showing `latest` and `1` updated to the new `1.1` digest while `1.0` remained pinned to the original image.*
 
 ![Version Rollback Verification](images/rollback-proof.png)
