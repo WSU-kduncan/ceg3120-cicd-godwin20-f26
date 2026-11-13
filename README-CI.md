@@ -1,3 +1,46 @@
+# Project 6 - Continuous Integration (CI) Pipeline
+
+## Continuous Integration Project Overview
+
+### Project Goal
+The goal of this project is to design and automate a Continuous Integration (CI) pipeline that packages a static web application into an Apache HTTP Server (`httpd:2.4`) Docker container image and publishes versioned releases to Docker Hub. By leveraging Git semantic version tags (`vMAJOR.MINOR.PATCH`) alongside GitHub Actions, each tagged release automatically builds and pushes `latest`, `major`, and `major.minor` container image tags to Docker Hub, ensuring reproducible deployments and rollback capability without overwriting prior stable releases.
+
+### Tools and Roles
+* **Docker & Docker Desktop:** Used locally to build container images from a `Dockerfile`, test web application rendering across mapped ports, and verify rollback capability across distinct semantic version tags.
+* **Git:** Used for local source version control, branching, and creating annotated semantic version tags (`git tag -a v*.*.*`) to mark release milestones.
+* **GitHub (`ceg3120-cicd-godwin20-f26`):** Hosts the remote repository (`web-content/`, `Dockerfile`, and workflow definitions) and securely stores registry credentials via GitHub Actions Repository Secrets (`DOCKER_USERNAME` and `DOCKER_TOKEN`).
+* **GitHub Actions (`.github/workflows/main.yml`):** Automates the CI pipeline on an `ubuntu-latest` runner whenever a semantic version tag (`v*.*.*`) is pushed, extracting tag metadata (`docker/metadata-action@v5`), authenticating with Docker Hub (`docker/login-action@v3`), and building/pushing multi-tagged images (`docker/build-push-action@v6`).
+* **Docker Hub (`hayden445/ceg3120-project6`):** Serves as the public cloud container registry storing the published images and maintaining immutable `major.minor` tags alongside mutable `major` and `latest` pointers.
+
+### CI Pipeline Architecture Diagram
+The diagram below illustrates the end-to-end continuous integration workflow—from local code edits and semantic tagging through automated GitHub Actions execution to multi-tag image publishing on Docker Hub:
+
+```mermaid
+flowchart LR
+    subgraph Local ["Local Development Environment"]
+        A["Edit web-content/ & Commit"] --> B["Create Annotated Tag<br/>(git tag -a v1.1.0)"]
+        B --> C["Push Tag to Origin<br/>(git push origin v1.1.0)"]
+    end
+
+    subgraph GitHub ["GitHub Repository (ceg3120-cicd-godwin20-f26)"]
+        C --> D{"Tag Matches<br/>'v*.*.*'?"}
+        D -- No --> E["Ignore (No Workflow Run)"]
+        D -- Yes --> F["Trigger GitHub Actions<br/>(.github/workflows/main.yml)"]
+        
+        subgraph Runner ["GitHub Actions Runner (ubuntu-latest)"]
+            F --> G["Checkout Code<br/>(actions/checkout@v4)"]
+            G --> H["Authenticate via Secrets<br/>(docker/login-action@v3)"]
+            H --> I["Extract SemVer Tags<br/>(docker/metadata-action@v5)"]
+            I --> J["Build & Push Image<br/>(docker/build-push-action@v6)"]
+        end
+    end
+
+    subgraph DockerHub ["Docker Hub (hayden445/ceg3120-project6)"]
+        J --> K["Publish Image Tags:<br/>• :latest<br/>• :1 (major)<br/>• :1.1 (major.minor)"]
+        K --> L["Prior Releases Preserved<br/>(e.g., :1.0 Available for Rollback)"]
+    end
+```
+
 ## Part 1 - Containerizing the Web Application
 
 ### Web Content Overview
@@ -39,11 +82,13 @@ docker run -d --name ceg3120-web -p 8080:80 hayden445/ceg3120-project6:latest
 ### Testing and Proof
 The screenshot below demonstrates the container running locally via `docker ps` alongside browser windows validating that both `index.html` and `about.html` render properly with CSS styles applied:
 
-Figure 1,2,and 3: Terminal output of docker ps showing the active container mapped to port 8080, and browser windows rendering both styled HTML pages.
+
 
 ![Terminal Output of docker ps](<Images/Screenshot 2026-11-09 183129.png>)
 ![Browser view of index.html](<Images/Screenshot 2026-11-09 183954.png>)
 ![Browser view of about.html](<Images/Screenshot 2026-11-09 184043.png>)
+
+Figure 1,2,and 3: Terminal output of docker ps showing the active container mapped to port 8080, and browser windows rendering both styled HTML pages.
 
 ## Part 2 - Automating Builds with GitHub Actions and Docker Hub
 
@@ -60,7 +105,7 @@ To authenticate automated builds with Docker Hub without hardcoding credentials 
    * `DOCKER_TOKEN`: Stores the generated Read & Write Docker Hub Personal Access Token used to authenticate the CI runner session.
 
 ![GitHub Repository Secrets](images/repo-secrets.png)
-*Figure 2: GitHub repository Actions secrets page confirming `DOCKER_USERNAME` and `DOCKER_TOKEN` are configured with masked values.*
+*Figure 4: GitHub repository Actions secrets page confirming `DOCKER_USERNAME` and `DOCKER_TOKEN` are configured with masked values.*
 
 ---
 
@@ -86,13 +131,13 @@ The automated CI pipeline is hosted at the [hayden445/ceg3120-project6 Docker Hu
 2. **Verifying the Published Image:** After a successful workflow run, pulling the updated image (`docker pull hayden445/ceg3120-project6:latest`) and running a local container (`docker run -d -p 8080:80 hayden445/ceg3120-project6:latest`) confirms that changes committed to `main` are live in the published container.
 
 ![Main Branch Workflow Trigger](images/main-trigger.png)
-*Figure 3: Successful GitHub Actions workflow run triggered by a commit pushed to the `main` branch, displaying the corresponding commit SHA.*
+*Figure 5: Successful GitHub Actions workflow run triggered by a commit pushed to the `main` branch, displaying the corresponding commit SHA.*
 
 ![Non-Main Branch Negative Test](images/branch-negative-test.png)
-*Figure 4: A commit pushed to a non-`main` test branch alongside the Actions tab confirming no workflow execution was triggered.*
+*Figure 6: A commit pushed to a non-`main` test branch alongside the Actions tab confirming no workflow execution was triggered.*
 
 ![Updated Image Browser Verification](images/change-to-image.png)
-*Figure 5: Browser rendering updated site text after pushing changes to `main`, allowing GitHub Actions to rebuild the image, and running the newly pulled container locally.*
+*Figure 7: Browser rendering updated site text after pushing changes to `main`, allowing GitHub Actions to rebuild the image, and running the newly pulled container locally.*
 
 
 
@@ -120,19 +165,19 @@ The updated [GitHub Actions Workflow File](.github/workflows/docker-build.yml) a
 Published tags and digests are available in the [hayden445/ceg3120-project6 Docker Hub Tags Page](https://hub.docker.com/r/hayden445/ceg3120-project6/tags).
 
 ![Tag Workflow Trigger](images/tag-trigger.png)
-*Figure 6: Terminal output from `git tag -l` alongside the GitHub Actions run triggered by pushing the `v1.0.0` tag.*
+*Figure 8: Terminal output from `git tag -l` alongside the GitHub Actions run triggered by pushing the `v1.0.0` tag.*
 
 ![Untagged Commit Negative Test](images/tag-negative-test.png)
-*Figure 7: A commit pushed to `main` without a tag alongside the Actions tab confirming no workflow was triggered.*
+*Figure 9: A commit pushed to `main` without a tag alongside the Actions tab confirming no workflow was triggered.*
 
 ![Docker Hub Semantic Tag Set](images/tag-set.png)
-*Figure 8: Docker Hub repository showing `latest`, `1`, `1.1`, and `1.0` tags generated automatically.*
+*Figure 10: Docker Hub repository showing `latest`, `1`, `1.1`, and `1.0` tags generated automatically.*
 
 ![Two Releases Digest Comparison](Images/two_releases.png)
-*Figure 9: Docker Hub image digests showing `latest` and `1` updated to the new `1.1` digest while `1.0` remained pinned to the original image.*
+*Figure 11: Docker Hub image digests showing `latest` and `1` updated to the new `1.1` digest while `1.0` remained pinned to the original image.*
 
 ![Version Rollback Verification](images/rollback-proof.png)
-*Figure 10: Side-by-side browser windows running `:1.0` on port 8081 and `:1.1` on port 8082, verifying rollback capability between releases.*
+*Figure 12: Side-by-side browser windows running `:1.0` on port 8081 and `:1.1` on port 8082, verifying rollback capability between releases.*
 
 
 
@@ -144,3 +189,5 @@ Published tags and digests are available in the [hayden445/ceg3120-project6 Dock
 * [GitHub Docs: Publishing Docker Images](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images): Consulted for configuring repository secrets (`DOCKER_USERNAME` and `DOCKER_TOKEN`) and restricting workflow triggers to the `main` branch.
 * [Semantic Versioning 2.0.0](https://semver.org/): Referenced for `vMAJOR.MINOR.PATCH` version numbering conventions.
 * [GitHub - docker/metadata-action](https://github.com/docker/metadata-action?tab=readme-ov-file): Used to configure `semver` tag extraction patterns (`{{major}}` and `{{major}}.{{minor}}`) and `latest` tagging.
+* [GitHub - Markdown Mermaid Diagrams](https://github.blog/developer-skills/github/include-diagrams-markdown-files-mermaid/): Referenced to format `mermaid` fenced code blocks so the CI pipeline architecture diagram renders natively inside `README-CI.md` on GitHub.
+* [Mermaid Syntax](https://mermaid.js.org/syntax/flowchart.html): Consulted for `flowchart LR` directional syntax, `subgraph` container grouping (Local, GitHub, and Docker Hub environments), and conditional decision node branching.
