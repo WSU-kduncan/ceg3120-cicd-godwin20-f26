@@ -84,9 +84,9 @@ The screenshot below demonstrates the container running locally via `docker ps` 
 
 
 
-![Terminal Output of docker ps](<images/Screenshot 2026-11-09 183129.png>)
-![Browser view of index.html](<images/Screenshot 2026-11-09 183954.png>)
-![Browser view of about.html](<images/Screenshot 2026-11-09 184043.png>)
+![Terminal Output of docker ps](<Images/Screenshot 2026-11-09 183129.png>)
+![Browser view of index.html](<Images/Screenshot 2026-11-09 183954.png>)
+![Browser view of about.html](<Images/Screenshot 2026-11-09 184043.png>)
 
 Figure 1,2,and 3: Terminal output of docker ps showing the active container mapped to port 8080, and browser windows rendering both styled HTML pages.
 
@@ -104,7 +104,7 @@ To authenticate automated builds with Docker Hub without hardcoding credentials 
    * `DOCKER_USERNAME`: Stores the Docker Hub account username (`hayden445`) used to identify the target registry namespace.
    * `DOCKER_TOKEN`: Stores the generated Read & Write Docker Hub Personal Access Token used to authenticate the CI runner session.
 
-![GitHub Repository Secrets](images/repo-secrets.png)
+![GitHub Repository Secrets](Images/repo-secrets.png)
 *Figure 4: GitHub repository Actions secrets page confirming `DOCKER_USERNAME` and `DOCKER_TOKEN` are configured with masked values.*
 
 ---
@@ -130,13 +130,13 @@ The automated CI pipeline is hosted at the [hayden445/ceg3120-project6 Docker Hu
 1. **Verifying Workflow Execution:** Pushing a commit to `main` triggers the workflow under the repository's **Actions** tab, where each step can be inspected for successful execution and image push confirmation. Pushing to a separate branch verifies that non-`main` branches do not trigger builds.
 2. **Verifying the Published Image:** After a successful workflow run, pulling the updated image (`docker pull hayden445/ceg3120-project6:latest`) and running a local container (`docker run -d -p 8080:80 hayden445/ceg3120-project6:latest`) confirms that changes committed to `main` are live in the published container.
 
-![Main Branch Workflow Trigger](images/main-trigger.png)
+![Main Branch Workflow Trigger](Images/main-trigger.png)
 *Figure 5: Successful GitHub Actions workflow run triggered by a commit pushed to the `main` branch, displaying the corresponding commit SHA.*
 
-![Non-Main Branch Negative Test](images/branch-negative-test.png)
+![Non-Main Branch Negative Test](Images/branch-negative-test.png)
 *Figure 6: A commit pushed to a non-`main` test branch alongside the Actions tab confirming no workflow execution was triggered.*
 
-![Updated Image Browser Verification](images/change-to-image.png)
+![Updated Image Browser Verification](Images/change-to-image.png)
 *Figure 7: Browser rendering updated site text after pushing changes to `main`, allowing GitHub Actions to rebuild the image, and running the newly pulled container locally.*
 
 
@@ -164,19 +164,19 @@ The updated [GitHub Actions Workflow File](.github/workflows/docker-build.yml) a
 ### Testing and Validating Semantic Releases
 Published tags and digests are available in the [hayden445/ceg3120-project6 Docker Hub Tags Page](https://hub.docker.com/r/hayden445/ceg3120-project6/tags).
 
-![Tag Workflow Trigger](images/tag-trigger.png)
+![Tag Workflow Trigger](Images/tag-trigger.png)
 *Figure 8: Terminal output from `git tag -l` alongside the GitHub Actions run triggered by pushing the `v1.0.0` tag.*
 
-![Untagged Commit Negative Test](images/tag-negative-test.png)
+![Untagged Commit Negative Test](Images/tag-negative-test.png)
 *Figure 9: A commit pushed to `main` without a tag alongside the Actions tab confirming no workflow was triggered.*
 
-![Docker Hub Semantic Tag Set](images/tag-set.png)
+![Docker Hub Semantic Tag Set](Images/tag-set.png)
 *Figure 10: Docker Hub repository showing `latest`, `1`, `1.1`, and `1.0` tags generated automatically.*
 
-![Two Releases Digest Comparison](images/two_releases.png)
+![Two Releases Digest Comparison](Images/two_releases.png)
 *Figure 11: Docker Hub image digests showing `latest` and `1` updated to the new `1.1` digest while `1.0` remained pinned to the original image.*
 
-![Version Rollback Verification](images/rollback-proof.png)
+![Version Rollback Verification](Images/rollback-proof.png)
 *Figure 12: Side-by-side browser windows running `:1.0` on port 8081 and `:1.1` on port 8082, verifying rollback capability between releases.*
 
 
