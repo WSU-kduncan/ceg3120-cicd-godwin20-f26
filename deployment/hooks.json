@@ -1,0 +1,42 @@
+[
+  {
+    "id": "redeploy-container",
+    "execute-command": "/home/ubuntu/scripts/refresh-container.sh",
+    "command-working-directory": "/home/ubuntu/scripts",
+    "response-message": "Redeploying container...",
+    "trigger-rule": {
+      "and": [
+        {
+          "match": {
+            "type": "payload-hmac-sha256",
+            "secret": "ceg3120fall2026",
+            "parameter": {
+              "source": "header",
+              "name": "X-Hub-Signature-256"
+            }
+          }
+        },
+        {
+          "match": {
+            "type": "value",
+            "value": "completed",
+            "parameter": {
+              "source": "payload",
+              "name": "action"
+            }
+          }
+        },
+        {
+          "match": {
+            "type": "value",
+            "value": "success",
+            "parameter": {
+              "source": "payload",
+              "name": "workflow_run.conclusion"
+            }
+          }
+        }
+      ]
+    }
+  }
+]

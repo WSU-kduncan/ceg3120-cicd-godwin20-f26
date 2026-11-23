@@ -1,0 +1,15 @@
+[Unit]
+Description=GitHub Webhook Listener for Container Deployment
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+ExecStart=/usr/bin/webhook -hooks /etc/webhook/hooks.json -verbose
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
