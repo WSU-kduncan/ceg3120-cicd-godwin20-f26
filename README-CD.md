@@ -109,6 +109,90 @@ The script was made executable (`chmod +x ~/scripts/refresh-container.sh`) and v
 
 *This screenshot confirms the container's restart policy is set to `unless-stopped` and shows `uptime` alongside `docker ps` after a system reboot, proving the container restarts automatically.*
 
+## Part 2 - Listen
+
+### Configuring a `webhook` Listener on EC2 Instance
+
+#### Installing and Verifying `adnanh/webhook`
+
+To enable the EC2 instance to listen for incoming deployment notifications from GitHub, `adnanh/webhook` was installed from Ubuntu's package repository:
+
+```bash
+sudo apt update
+sudo apt install -y webhook
+```
+
+Successful installation was confirmed by checking the installed binary version(`2.8.0`)
+
+```
+webhook --version
+```
+
+#### Hook Definition File Summary
+A hook configuration file was created at `/etc/webhook/hooks.json` on the EC2 instance and committed to this repository at `deployment/hooks.json`.
+
+This file defines a single hook (`id: "redeploy-container"`) exposed at the endpoint `http://3.84.105.167:9000/hooks/redeploy-container` and performs the following:
+
+* **Command Execution:** Runs `/home/ubuntu/scripts/refresh-container.sh` inside the `/home/ubuntu/scripts` working directory when triggered.
+
+* **Trigger Rules (`and` logic):** All three conditions must evaluate to `true` before the script executes:
+
+1. HMAC Signature Validation (`payload-hmac-sha256`): Validates the `X-Hub-Signature-256` HTTP header against the shared secret configured in GitHub, ensuring only authentic payloads signed by GitHub are accepted.
+
+2. Action Status (`action == "completed"`): Ensures the hook ignores `requested` or `in_progress` workflow events and only evaluates finished workflow runs.
+
+3. Workflow Conclusion (`workflow_run.conclusion == "success"`): Ensures the container is only refreshed after the GitHub Actions CI pipeline has succeeded and pushed the updated `latest` image to DockerHub.
+
+#### Verifying Hook Loading and Payload Reception
+To confirm `webhook` parses the JSON definition without syntax errors, the listener was launched manually in verbose mode:
+
+```
+webhook -hooks /etc/webhook/hooks.json -verbose
+```
+
+The console output confirmed `found 1 hook(s) in file` and `loaded: redeploy-container`.
+
+![Webhook started and hook.js loaded](Images/webhook-started-hook-loaded.png)
+
+*This screenshot shows `webhook` starting in verbose mode, confirming that `/etc/webhook/hooks.json` loaded cleanly and the `redeploy-container` endpoint is active.*
+
+When testing live deliveries and monitoring `webhook` in production:
+
+* **Monitoring `webhook` Logs:** Real-time logs from the background service are inspected using `sudo journalctl -u webhook.service -f` (or `sudo journalctl -u webhook.service -n 50`), which logs incoming HTTP requests, rule evaluation results (`matched` vs. `not matched`), and script execution output.
+
+* **Inspecting `docker` Process Views:** Running `docker ps` before and after a webhook delivery confirms a successful deployment by displaying a newly generated `CONTAINER ID`, a reset `CREATED` / `STATUS` timestamp (`Up X seconds`), and the updated `hayden445/ceg3120-project6:latest` image.
+
+### Configure a webhook Service on EC2 Instance
+#### webhook Service File Summary
+To ensure the webhook listener runs continuously in the background and starts automatically whenever the EC2 instance boots, a `systemd` unit file was created at `/etc/systemd/system/webhook.service` and saved in this repository at `deployment/webhook.service`.
+
+* `[Unit]` Section: Defines the service description and uses `After=network.target docker.service` and `Requires=docker.service` so `webhook` waits until networking and the Docker daemon are online before starting.
+
+* `[Service]` Section: Runs `/usr/bin/webhook -hooks /etc/webhook/hooks.json -verbose` under the `ubuntu` user and group (which have permissions to execute Docker commands without `sudo`) and sets `Restart=always` with `RestartSec=5` for automatic recovery.
+
+* `[Install]` Section: Uses `WantedBy=multi-user.target` so `systemd` starts the service during normal multi-user system boot.
+
+#### Enabling and Starting the `webhook` Service
+After saving the unit file, `systemd` was reloaded, enabled for boot persistence, and started:
+
+```
+sudo systemctl daemon-reload
+sudo systemctl enable webhook.service
+sudo systemctl start webhook.service
+```
+
+#### Verifying Service Status and Script Execution
+Running `sudo systemctl status webhook.service` verified that the service is both `enabled` and `active (running)`, including across system reboots. Combining `sudo journalctl -u webhook.service -f` with `docker ps` confirms that incoming valid payloads are captured by the `systemd` service and trigger `refresh-container.sh`.
+
+![Webhook systemctl status](Images/webhook-systemctl.png)
+
+*This screenshot shows `systemctl status webhook.service` reporting the service as `enabled` and `active (running)`.*
+
+
+
 ### Resources
 * [Docker Post-Installation Steps for Linux](https://docs.docker.com/engine/install/linux-postinstall/): Used for adding the ubuntu user to the docker group to run Docker commands without sudo and configuring container restart policies (--restart unless-stopped).
 * [Docker run CLI Reference](https://docs.docker.com/reference/cli/docker/container/run/): Referenced for comparing detached (-d) versus interactive (-it) container execution flags and port publishing (-p).
+* [`adnanh/webhook` Repository](https://github.com/adnanh/webhook): Referenced for CLI flags (`-hooks`, `-verbose`) and webhook endpoint URL structure (`/hooks/{id}`).
+* [`adnanh/webhook` Hook Rules Documentation](https://github.com/adnanh/webhook/blob/master/docs/Hook-Rules.md): Used to configure `and` trigger rules combining `payload-hmac-sha256` signature validation on `X-Hub-Signature-256` with JSON payload `value` matching.
+* [Linux Handbook — How to Create a `systemd` Service](https://linuxhandbook.com/create-systemd-services/): Referenced for structuring `[Unit]`, `[Service]`, and `[Install]` sections and using `systemctl daemon-reload`, `enable`, and `start`.
